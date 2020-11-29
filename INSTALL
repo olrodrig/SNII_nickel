@@ -1,0 +1,4 @@
+The SNII_nickel code does not require installation, but it has dependencies that must be satisfied.
+
+- Python 3 (in Ubuntu: apt install python3)
+- numpy, matplotlib (e.g. pip3 install numpy matplotlib)
