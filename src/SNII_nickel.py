@@ -5,35 +5,36 @@ class Nickel_mass:
 
   def __init__(self, band, t_mag, mag, err_mag, properties, tmin=95.0, tmax=320.0, RxG=99, Rxh=99, apply_kcor=True, verbose=True):
     
-    if band not in ['V', 'r', 'R', 'i', 'I']:
+    if band not in ['V', 'r', 'R', 'i', 'I', 'rztf']:
         print('Error: input band "'+band+'" is not valid!')
-        print('       Valid bands: "V", "r", "R", "i", "I".')
+        print('       Valid bands: "V", "r", "R", "i", "I", "rztf".')
     else:
     
-        self.band = band
-        self.mag = mag
-        self.emag = err_mag
+        self.band      = band
+        self.mag       = mag
+        self.emag      = err_mag
         self.logMNi_i  = {}
         self.elogMNi_i = {}
         self.logMNi    = {}
         self.elogMNi   = {}
-        self.MNi    = {}
-        self.eMNi   = {}
+        self.MNi       = {}
+        self.eMNi      = {}
         self.ssd       = {}
-        self.tmin = tmin
-        self.tmax = tmax
+        self.tmin      = tmin
+        self.tmax      = tmax
         
-        #total-to-selective extinction ratios
-        Al_EBV = {'V':2.96, 'r':2.50, 'R':2.33, 'i':1.94, 'I':1.68}
+        #total-to-selective extinction ratios for the radioactive tail
+        Al_EBV = {'V':2.96, 'r':2.49, 'rztf':2.40, 'R':2.33, 'i':1.93, 'I':1.68}
         if RxG == 99:  RxG = Al_EBV[band]
         if Rxh == 99:  Rxh = Al_EBV[band]
         
         #BC calibrations
-        if band == 'V':  zp, error_zp, beta = 11.15, 0.18, 0.0
-        if band == 'r':  zp, error_zp, beta = 11.89, 0.16, 0.0
-        if band == 'R':  zp, error_zp, beta = 12.07, 0.14, 0.0
-        if band == 'i':  zp, error_zp, beta = 11.91, 0.12, 0.0
-        if band == 'I':  zp, error_zp, beta = 12.37, 0.10, 0.036
+        if band == 'V'   :  zp, error_zp, beta = 11.15, 0.18, 0.0
+        if band == 'r'   :  zp, error_zp, beta = 11.89, 0.16, 0.0
+        if band == 'rztf':  zp, error_zp, beta = 11.93, 0.14, 0.0 #BC=mbol-rztf=mbol-(R+0.14)=BC_R-0.14=11.93
+        if band == 'R'   :  zp, error_zp, beta = 12.07, 0.14, 0.0
+        if band == 'i'   :  zp, error_zp, beta = 11.91, 0.12, 0.0
+        if band == 'I'   :  zp, error_zp, beta = 12.37, 0.10, 0.036
         
         #ZP systematic error
         error_alpha = 0.04
@@ -121,16 +122,19 @@ class Nickel_mass:
                 elMNi_i = err_A_i
                 lMNi    = A+B
                 elMNi   = np.sqrt(err_A**2+err_B**2)
+                
+                MNi  = 10.0**(lMNi+0.5*np.log(10.0)*elMNi**2)
+                eMNi = MNi*np.sqrt(10.0**(np.log(10.0)*elMNi**2)-1.0)
                             
                 self.fdep = False
                 self.logMNi_i['fdep=1']  = lMNi_i
                 self.elogMNi_i['fdep=1'] = elMNi_i
-                self.logMNi    = lMNi
-                self.elogMNi   = elMNi
-                self.MNi       = 10.0**lMNi
-                self.eMNi      = np.log(10.0)*elMNi*10.0**lMNi
-                self.ssd['fdep=1']       = ssd_A
-                self.Dt_i    = Dt_i
+                self.logMNi        = lMNi
+                self.elogMNi       = elMNi
+                self.MNi           = MNi
+                self.eMNi          = eMNi
+                self.ssd['fdep=1'] = ssd_A
+                self.Dt_i          = Dt_i
                 
                 if fdep_needed:
                     if pars[1]>0.0:
@@ -158,19 +162,22 @@ class Nickel_mass:
                         lMNi  = AD+B
                         elMNi = np.sqrt(err_A**2+err_B**2)
                         
+                        MNi  = 10.0**(lMNi+0.5*np.log(10.0)*elMNi**2)
+                        eMNi = MNi*np.sqrt(10.0**(np.log(10.0)*elMNi**2)-1.0)
+                        
                         self.fdep = True
                         self.T_0 = T_0
                         self.ssd['fdep<1']       = ssd_A
                         self.logMNi_i['fdep<1']  = lMNi_i
                         self.elogMNi_i['fdep<1'] = elMNi_i
-                        self.logMNi_unc    = self.logMNi.copy()
-                        self.elogMNi_unc   = self.elogMNi.copy()
-                        self.MNi_unc       = self.MNi.copy()
-                        self.eMNi_unc      = self.eMNi.copy()
-                        self.logMNi    = lMNi
-                        self.elogMNi   = elMNi
-                        self.MNi       = 10.0**lMNi
-                        self.eMNi      = np.log(10.0)*elMNi*10.0**lMNi
+                        self.logMNi_unc  = self.logMNi.copy()
+                        self.elogMNi_unc = self.elogMNi.copy()
+                        self.MNi_unc     = self.MNi.copy()
+                        self.eMNi_unc    = self.eMNi.copy()
+                        self.logMNi      = lMNi
+                        self.elogMNi     = elMNi
+                        self.MNi         = MNi
+                        self.eMNi        = eMNi
                 
     
   def plot(self, panels, sn='', figure_name=''):
@@ -182,11 +189,12 @@ def Kcor(band, z_helio, phase):
       print('Warning: implemented K-correction is valid for z_helio<0.043 (input z_helio='+str(z_helio)+')')
       print('         Consider providing K-corrected photometry to the SNII_nickel code.\n')
       
-  if band == 'V':  K_pars, ssd_K = [8.10, -1.69], 2.97
-  if band == 'r':  K_pars, ssd_K = [4.04,  0.92], 2.30
-  if band == 'R':  K_pars, ssd_K = [1.48,  0.57], 0.92
-  if band == 'i':  K_pars, ssd_K = [1.09,  0.39], 0.94
-  if band == 'I':  K_pars, ssd_K = [6.31, -1.69], 1.07
+  if band == 'V'   :  K_pars, ssd_K = [8.10, -1.69], 2.97
+  if band == 'r'   :  K_pars, ssd_K = [4.12,  0.88], 2.21
+  if band == 'rztf':  K_pars, ssd_K = [0.60,  0.77], 1.22
+  if band == 'R'   :  K_pars, ssd_K = [1.48,  0.57], 0.92
+  if band == 'i'   :  K_pars, ssd_K = [1.05,  0.26], 1.00
+  if band == 'I'   :  K_pars, ssd_K = [6.31, -1.69], 1.07
   
   K       = -2.5*np.log10(1.0+z_helio)+z_helio*(K_pars[0]+K_pars[1]*(phase/100.0))
   error_K = z_helio*ssd_K
@@ -222,7 +230,8 @@ def likelihood_maximization(A_i, err_A_i, n_pars=1):
 
 def fdep_cor(Dt_i, A_i, err_A_i):
     
-  T_0s = np.linspace(100.0, 700.0, 601)[::-1]
+  #T_0s = np.linspace(95.0, 700.0, 606)[::-1]
+  T_0s = np.linspace(55.0, 700.0, 646)[::-1]
   
   m2lnL_min = 1.e99
   for T_0 in T_0s:
